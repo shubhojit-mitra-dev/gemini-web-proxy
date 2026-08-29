@@ -280,7 +280,13 @@ func (h *OpenAIHandler) HandleResponses(w http.ResponseWriter, r *http.Request) 
 		}
 	}
 
-	prompt := MessagesToPrompt(messages, nil)
+	var tools []ToolDefinition
+	if toolsRaw, ok := req["tools"].([]interface{}); ok {
+		toolsBytes, _ := json.Marshal(toolsRaw)
+		_ = json.Unmarshal(toolsBytes, &tools)
+	}
+
+	prompt := MessagesToPrompt(messages, tools)
 	text, err := h.geminiClient.StreamGenerate(r.Context(), prompt, resolved.ModeID, resolved.ThinkMode, nil)
 	if err != nil {
 		writeJSONError(w, http.StatusBadGateway, fmt.Sprintf("Upstream error: %v", err))

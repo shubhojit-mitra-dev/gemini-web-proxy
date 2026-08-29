@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 )
 
-var toolCallPattern = regexp.MustCompile("(?s)```tool_call\\s*\\n(.*?)\\n```")
+var toolCallPattern = regexp.MustCompile("(?s)```(?:tool_call|json)\\s*\\n(.*?)\\n```")
 
 // ChatMessage represents standard OpenAI role-content structure.
 type ChatMessage struct {
@@ -130,19 +130,20 @@ func ParseToolCalls(text string) (string, []ToolCall) {
 		if len(match) > 1 {
 			var raw map[string]interface{}
 			if err := json.Unmarshal([]byte(strings.TrimSpace(match[1])), &raw); err == nil {
-				name, _ := raw["name"].(string)
-				argsObj := raw["arguments"]
-				argsBytes, _ := json.Marshal(argsObj)
+				if name, ok := raw["name"].(string); ok && name != "" {
+					argsObj := raw["arguments"]
+					argsBytes, _ := json.Marshal(argsObj)
 
-				toolCalls = append(toolCalls, ToolCall{
-					Index: i,
-					ID:    fmt.Sprintf("call_%s", uuid.New().String()[:8]),
-					Type:  "function",
-					Function: ToolFunction{
-						Name:      name,
-						Arguments: string(argsBytes),
-					},
-				})
+					toolCalls = append(toolCalls, ToolCall{
+						Index: i,
+						ID:    fmt.Sprintf("call_%s", uuid.New().String()[:8]),
+						Type:  "function",
+						Function: ToolFunction{
+							Name:      name,
+							Arguments: string(argsBytes),
+						},
+					})
+				}
 			}
 		}
 	}
