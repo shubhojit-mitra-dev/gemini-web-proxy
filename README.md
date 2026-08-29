@@ -7,13 +7,15 @@ Designed for seamless integration with AI coding tools (e.g., OpenCode, OpenAI C
 ## Features
 
 - **Zero API Key Requirement**: Works out-of-the-box using public Gemini web endpoints or optional session cookies.
-- **Dedicated Port**: Operates by default on port `58120` to prevent collisions with other local development services.
-- **Automatic Cookie Discovery**: Automatically detects `cookies.json` in local working directory or `~/.config/gemini-web-proxy/cookies.json`.
-- **OpenAI, OpenCode & Codex CLI Compatibility**: Fully compatible with OpenAI endpoints, including strict client validation rules (e.g., Codex v0.151.0 model metadata requirements).
+- **Dedicated Default Port**: Operates by default on port `58120` to prevent collisions with other local development services.
+- **Automatic Cookie Discovery**: Automatically detects `cookies.json` in the local working directory or at `~/.config/gemini-web-proxy/cookies.json`.
+- **OpenAI, OpenCode & Codex CLI Compatibility**: Fully compatible with OpenAI endpoints, including strict client metadata validation rules (e.g., Codex v0.151.0).
 - **Full Tool Execution Support**: Automatically translates function call schemas and tool executions (shell commands, file modifications) between OpenAI and Gemini.
 - **Real-Time SSE Streaming**: Native Server-Sent Events streaming powered by Go goroutines for low latency.
 - **Auto Token & BL Refresh**: Automatically fetches and refreshes `SNlM0e` XSRF tokens and backend build labels (`gemini_bl`).
-- **Cross-Platform**: Compiles to a single binary with zero external runtime dependencies on Linux, macOS, and Windows.
+- **Production-Grade Tooling**: Includes Docker containerization, systemd user service manifests, and GitHub Actions CI pipelines.
+
+---
 
 ## Quick Start
 
@@ -37,22 +39,30 @@ The compiled binary will be placed at `bin/gemini-web-proxy`.
 
 By default, the proxy listens at `http://localhost:58120/v1`.
 
+### Docker Usage
+
+```bash
+# Build Docker Image
+docker build -t gemini-web-proxy .
+
+# Run Container
+docker run -d -p 58120:58120 --name gemini-web-proxy gemini-web-proxy
+```
+
 ---
 
 ## Integration with OpenAI Codex CLI
 
-### Important Setup Notice
+### User-Level Configuration Requirement
 
-Codex CLI requires custom providers (`model_provider`) to be set in your user-level configuration at `~/.codex/config.toml`. Setting `model_provider = "gemini-web"` globally routes Codex requests through your local Gemini proxy.
-
-To switch back to native OpenAI models, comment out `model_provider = "gemini-web"` in `~/.codex/config.toml`.
+Codex CLI security policy **explicitly ignores** `model_provider` and `model_providers` keys in project-local `.codex/config.toml` files. Custom provider settings **must** be declared in your user-level configuration at `~/.codex/config.toml`.
 
 ### Step-by-Step Configuration
 
 1. Edit your user-level configuration file at `~/.codex/config.toml`:
 
 ```toml
-model = "gpt-5.5"
+model = "gpt-5.6-sol"
 model_provider = "gemini-web"
 approval = "never"
 sandbox = "workspace-write"
@@ -70,7 +80,7 @@ wire_api = "responses"
 export GEMINI_WEB_API_KEY="sk-gemini"
 ```
 
-3. Launch Codex:
+3. Launch Codex CLI:
 
 ```bash
 codex
@@ -78,32 +88,40 @@ codex
 
 ---
 
-## In-Session Model Switching via `/model` Dropdown (Best DX)
+## In-Session Model Switching via `/model` Dropdown
 
-Because Codex CLI v0.151.0 hardcodes its `/model` TUI dropdown menu to GPT model names, the proxy maps each TUI menu selection directly to a distinct Gemini operational mode:
+In Codex CLI v0.151.0, pressing `/model` inside the TUI displays a hardcoded list of model choices. The proxy maps each TUI menu item directly to its corresponding Gemini operational backend:
 
-| TUI Dropdown Selection | Mapped Gemini Backend Mode | Description |
-| --- | --- | --- |
-| **`gpt-5.5`** | **Gemini 3.7 Flash** | Standard all-around fast mode |
-| **`gpt-5.6-sol`** | **Gemini 3.5 Flash Thinking** | **Deep Reasoning / Thinking Mode** |
-| **`gpt-5.2`** | **Gemini 3.1 Pro** | **Pro Mode** (requires session cookies) |
-| **`gpt-5.6-terra`** | **Gemini Flash Thinking Lite** | Adaptive depth thinking mode |
-| **`gpt-5.6-luna`** | **Gemini Flash Lite** | Lightweight ultra-fast mode |
+| Codex TUI Choice | Description in Codex | Mapped Gemini Backend | Purpose / Capability |
+| :--- | :--- | :--- | :--- |
+| **`1. gpt-5.6-sol`** | Latest frontier agentic coding model | **Gemini 3.1 Pro** | **Pro Mode** (requires session cookies) |
+| **`2. gpt-5.6-terra`** | Balanced agentic coding model for everyday work | **Gemini 3.5 Flash Thinking** | **Deep Reasoning / Thinking Mode** |
+| **`3. gpt-5.6-luna`** | Fast and affordable agentic coding model | **Gemini Flash Thinking Lite** | **Adaptive Depth Thinking** |
+| **`4. gpt-5.5`** | Frontier model for complex coding, research | **Gemini 3.7 Flash** | **Standard All-Around Fast Mode** |
+| **`5. gpt-5.4`** | Strong model for everyday coding | **Gemini 3.6 Flash** | **Reliable Flash Mode** |
+| **`6. gpt-5.4-mini`** | Small, fast, and cost-efficient model | **Gemini Flash Lite** | **Lightweight Ultra-Fast Mode** |
 
-### How to switch modes in the middle of a session:
-Press `/model` inside Codex CLI and pick:
-- **`gpt-5.6-sol`** for **Deep Reasoning / Thinking Mode**
-- **`gpt-5.2`** for **Gemini 3.1 Pro**
-- **`gpt-5.5`** for **Gemini 3.7 Flash**
+### How to switch models mid-session:
+While inside an active Codex CLI session, press `/model` and pick:
+- **`1. gpt-5.6-sol`** to switch instantly to **Gemini 3.1 Pro Mode**.
+- **`2. gpt-5.6-terra`** to switch instantly to **Gemini 3.5 Flash Thinking (Deep Reasoning)**.
+- **`4. gpt-5.5`** to switch instantly to **Gemini 3.7 Flash**.
 
-The proxy intercepts the selection instantly without needing to restart your session or type command line flags.
+The proxy intercepts your choice dynamically without requiring session restarts!
+
+---
+
+## Toggling Between Gemini & Native OpenAI Models
+
+- **To use free Gemini models**: Keep `model_provider = "gemini-web"` active in `~/.codex/config.toml`.
+- **To use native OpenAI models**: Comment out `# model_provider = "gemini-web"` in `~/.codex/config.toml`.
 
 ---
 
 ## Tool Execution Permissions
 
 To ensure Codex permits Gemini to execute shell commands and read/modify files:
-- Set `approval = "never"` (or `"auto"` / `"ask"`).
+- Set `approval = "never"` (or `"auto"` / `"ask"` depending on security preferences).
 - Set `sandbox = "workspace-write"`.
 
 ---
@@ -150,7 +168,7 @@ To connect OpenCode to `gemini-web-proxy`:
 
 ## Authentication & Cookies Setup (Optional)
 
-While basic public queries work anonymously, adding session cookies allows access to model persistence, higher quota limits, and Pro routing.
+While basic public queries work anonymously, adding session cookies allows access to model persistence, higher quota limits, and Pro routing (`gemini-3.1-pro`).
 
 ### How to Add Your Cookies
 
@@ -210,7 +228,7 @@ systemctl --user status gemini-web-proxy.service
 ## Configuration Reference
 
 | Flag | Env Variable | Default | Description |
-| --- | --- | --- | --- |
+| :--- | :--- | :--- | :--- |
 | `--port` | `GEMINI_PROXY_PORT` | `58120` | Port to listen on |
 | `--host` | `GEMINI_PROXY_HOST` | `0.0.0.0` | Bind address |
 | `--cookie-file` | `GEMINI_PROXY_COOKIE_FILE` | `""` | Path to cookies file for authenticated sessions |
@@ -218,16 +236,21 @@ systemctl --user status gemini-web-proxy.service
 
 ---
 
-## Project Structure
+## Development & Quality Assurance
 
-- `cmd/proxy/`: Main application entry point.
-- `internal/config/`: Configuration loading and cookie auto-discovery.
-- `internal/auth/`: Cookie parsing, XSRF token management, and SAPISID hashing.
-- `internal/gemini/`: Upstream protocol framing, JSON payload generation, and streaming response parsing.
-- `internal/api/`: OpenAI, Responses API, and Google Native API HTTP handlers.
-- `internal/models/`: Model registry and strict client metadata mappings.
-- `pkg/logger/`: Structured lightweight logging.
+```bash
+# Run tests
+make test
+
+# Format code
+make fmt
+
+# Run linters
+golangci-lint run
+```
+
+---
 
 ## License
 
-MIT License.
+[MIT License](LICENSE) &copy; 2026 Shubhojit Mitra.
