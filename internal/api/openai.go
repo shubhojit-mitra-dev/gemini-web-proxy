@@ -322,6 +322,139 @@ func (h *OpenAIHandler) HandleResponses(w http.ResponseWriter, r *http.Request) 
 		})
 	}
 
+	stream, _ := req["stream"].(bool)
+	if stream {
+		w.Header().Set("Content-Type", "text/event-stream")
+		w.Header().Set("Cache-Control", "no-cache")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+
+		flusher, ok := w.(http.Flusher)
+		if !ok {
+			writeJSONError(w, http.StatusInternalServerError, "Streaming unsupported")
+			return
+		}
+
+		seq := 0
+		emit := func(evType string, fields map[string]interface{}) {
+			seq++
+			ev := map[string]interface{}{
+				"type":            evType,
+				"sequence_number": seq,
+			}
+			for k, v := range fields {
+				ev[k] = v
+			}
+			data, _ := json.Marshal(ev)
+			fmt.Fprintf(w, "event: %s\ndata: %s\n\n", evType, data)
+			flusher.Flush()
+		}
+
+		usage := map[string]int{
+			"input_tokens":  len(prompt) / 4,
+			"output_tokens": len(text) / 4,
+			"total_tokens":  (len(prompt) + len(text)) / 4,
+		}
+
+		baseResp := map[string]interface{}{
+			"id":         rid,
+			"object":     "response",
+			"created_at": time.Now().Unix(),
+			"model":      resolved.Name,
+		}
+
+		emit("response.created", map[string]interface{}{
+			"response": map[string]interface{}{
+				"id":         rid,
+				"object":     "response",
+				"created_at": time.Now().Unix(),
+				"model":      resolved.Name,
+				"status":     "in_progress",
+				"output":     []interface{}{},
+				"usage":      nil,
+			},
+		})
+
+		emit("response.in_progress", map[string]interface{}{
+			"response": map[string]interface{}{
+				"id":         rid,
+				"object":     "response",
+				"created_at": time.Now().Unix(),
+				"model":      resolved.Name,
+				"status":     "in_progress",
+				"output":     []interface{}{},
+				"usage":      nil,
+			},
+		})
+
+		for oi, item := range output {
+			itemType, _ := item["type"].(string)
+			if itemType == "function_call" {
+				pending := map[string]interface{}{
+					"type":      "function_call",
+					"id":        item["id"],
+					"call_id":   item["call_id"],
+					"name":      item["name"],
+					"arguments": "",
+					"status":    "in_progress",
+				}
+				emit("response.output_item.added", map[string]interface{}{"output_index": oi, "item": pending})
+				emit("response.function_call_arguments.delta", map[string]interface{}{"item_id": item["id"], "output_index": oi, "delta": item["arguments"]})
+				emit("response.function_call_arguments.done", map[string]interface{}{"item_id": item["id"], "output_index": oi, "arguments": item["arguments"]})
+				emit("response.output_item.done", map[string]interface{}{"output_index": oi, "item": item})
+			} else if itemType == "message" {
+				pending := map[string]interface{}{
+					"type":    "message",
+					"id":      item["id"],
+					"role":    "assistant",
+					"status":  "in_progress",
+					"content": []interface{}{},
+				}
+				emit("response.output_item.added", map[string]interface{}{"output_index": oi, "item": pending})
+				contentList, _ := item["content"].([]map[string]interface{})
+				for ci, cp := range contentList {
+					emit("response.content_part.added", map[string]interface{}{
+						"item_id":       item["id"],
+						"output_index":  oi,
+						"content_index": ci,
+						"part":          map[string]interface{}{"type": "output_text", "text": "", "annotations": []interface{}{}},
+					})
+					emit("response.output_text.delta", map[string]interface{}{
+						"item_id":       item["id"],
+						"output_index":  oi,
+						"content_index": ci,
+						"delta":         cp["text"],
+					})
+					emit("response.output_text.done", map[string]interface{}{
+						"item_id":       item["id"],
+						"output_index":  oi,
+						"content_index": ci,
+						"text":          cp["text"],
+					})
+					emit("response.content_part.done", map[string]interface{}{
+						"item_id":       item["id"],
+						"output_index":  oi,
+						"content_index": ci,
+						"part":          cp,
+					})
+				}
+				emit("response.output_item.done", map[string]interface{}{"output_index": oi, "item": item})
+			}
+		}
+
+		emit("response.completed", map[string]interface{}{
+			"response": map[string]interface{}{
+				"id":         baseResp["id"],
+				"object":     baseResp["object"],
+				"created_at": baseResp["created_at"],
+				"model":      baseResp["model"],
+				"status":     "completed",
+				"output":     output,
+				"usage":      usage,
+			},
+		})
+		return
+	}
+
 	writeJSON(w, http.StatusOK, map[string]interface{}{
 		"id":         rid,
 		"object":     "response",
