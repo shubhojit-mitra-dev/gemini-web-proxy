@@ -43,9 +43,9 @@ By default, the proxy listens at `http://localhost:58120/v1`.
 
 ### Important Setup Notice
 
-Codex CLI requires custom providers (`model_provider`) to be set in your user-level configuration at `~/.codex/config.toml`. Setting `model_provider = "gemini-web"` globally routes all Codex requests through your local Gemini proxy.
+Codex CLI requires custom providers (`model_provider`) to be set in your user-level configuration at `~/.codex/config.toml`. Setting `model_provider = "gemini-web"` globally routes Codex requests through your local Gemini proxy.
 
-To switch back to native OpenAI, comment out `model_provider = "gemini-web"` in `~/.codex/config.toml`.
+To switch back to native OpenAI models, comment out `model_provider = "gemini-web"` in `~/.codex/config.toml`.
 
 ### Step-by-Step Configuration
 
@@ -78,24 +78,29 @@ codex
 
 ---
 
-### In-Session Model Switching via `/model` Dropdown (Best DX)
+## In-Session Model Switching via `/model` Dropdown (Best DX)
 
-Because Codex CLI v0.151.0 hardcodes its `/model` TUI dropdown menu to GPT model names, the proxy maps each TUI menu item directly to a distinct Gemini operational mode:
+Because Codex CLI v0.151.0 hardcodes its `/model` TUI dropdown menu to GPT model names, the proxy maps each TUI menu selection directly to a distinct Gemini operational mode:
 
-| TUI Dropdown Selection | Mapped Gemini Backend | Description |
+| TUI Dropdown Selection | Mapped Gemini Backend Mode | Description |
 | --- | --- | --- |
 | **`gpt-5.5`** | **Gemini 3.7 Flash** | Standard all-around fast mode |
-| **`gpt-5.6-sol`** | **Gemini 3.5 Flash Thinking** | Deep Reasoning / Thinking mode |
-| **`gpt-5.2`** | **Gemini 3.1 Pro** | Pro mode (requires session cookies) |
+| **`gpt-5.6-sol`** | **Gemini 3.5 Flash Thinking** | **Deep Reasoning / Thinking Mode** |
+| **`gpt-5.2`** | **Gemini 3.1 Pro** | **Pro Mode** (requires session cookies) |
 | **`gpt-5.6-terra`** | **Gemini Flash Thinking Lite** | Adaptive depth thinking mode |
 | **`gpt-5.6-luna`** | **Gemini Flash Lite** | Lightweight ultra-fast mode |
 
-**How to switch modes in the middle of a session:**
-Press `/model` inside Codex CLI and pick `gpt-5.6-sol` for Deep Reasoning, `gpt-5.2` for Pro mode, or `gpt-5.5` for Flash. The proxy intercepts the selection instantly without needing to restart your session!
+### How to switch modes in the middle of a session:
+Press `/model` inside Codex CLI and pick:
+- **`gpt-5.6-sol`** for **Deep Reasoning / Thinking Mode**
+- **`gpt-5.2`** for **Gemini 3.1 Pro**
+- **`gpt-5.5`** for **Gemini 3.7 Flash**
+
+The proxy intercepts the selection instantly without needing to restart your session or type command line flags.
 
 ---
 
-### Tool Execution Permissions
+## Tool Execution Permissions
 
 To ensure Codex permits Gemini to execute shell commands and read/modify files:
 - Set `approval = "never"` (or `"auto"` / `"ask"`).
