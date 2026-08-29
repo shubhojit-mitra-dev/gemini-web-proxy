@@ -1,0 +1,7 @@
+.git
+.gitignore
+.github
+bin/
+tmp/
+*.md
+cookies.json
