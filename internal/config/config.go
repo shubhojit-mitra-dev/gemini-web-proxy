@@ -91,7 +91,22 @@ func (c *Config) AutoLoad(customPath string) {
 	for _, p := range candidatePaths {
 		if _, err := os.Stat(p); err == nil {
 			if err := c.LoadFile(p); err == nil {
-				return
+				break
+			}
+		}
+	}
+
+	// Auto-discover cookies.json if CookieFile is unset
+	if c.CookieFile == "" {
+		cookieCandidates := []string{"./cookies.json"}
+		if homeDir, err := os.UserHomeDir(); err == nil {
+			cookieCandidates = append(cookieCandidates, filepath.Join(homeDir, ".config", "gemini-web-proxy", "cookies.json"))
+		}
+		for _, cp := range cookieCandidates {
+			if _, err := os.Stat(cp); err == nil {
+				c.CookieFile = cp
+				logger.Info("Discovered cookie file automatically: %s", cp)
+				break
 			}
 		}
 	}
