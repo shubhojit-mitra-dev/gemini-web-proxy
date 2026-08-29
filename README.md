@@ -20,7 +20,7 @@ Designed for seamless integration with AI coding tools (e.g., OpenAI Codex CLI, 
 Ensure Go 1.21+ is installed on your system.
 
 ```bash
-git clone https://github.com/blackknight05/gemini-web-proxy.git
+git clone https://github.com/shubhojit-mitra-dev/gemini-web-proxy.git
 cd gemini-web-proxy
 make build
 ```
