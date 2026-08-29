@@ -39,32 +39,20 @@ By default, the proxy listens at `http://localhost:58120/v1`.
 
 ---
 
-## Model Selection & Compatibility Mappings
-
-When querying the proxy root status (`http://localhost:58120/`), the proxy lists native Gemini models:
-
-- `gemini-3.7-flash` (Default all-around fast model)
-- `gemini-3.6-flash`
-- `gemini-3.5-flash-thinking` (Deep thinking mode)
-- `gemini-3.1-pro` (Requires session cookies for routing)
-- `gemini-flash-lite`
-
-For compatibility with strict AI coding tools (such as OpenAI Codex CLI v0.151.0) that enforce hardcoded OpenAI model names, the proxy also accepts mock model aliases (`gpt-5.5`, `gpt-5.6-sol`, `gpt-5.6-terra`, `gpt-5.6-luna`, `gpt-5.2`) and routes them directly to Gemini 3.7 Flash.
-
----
-
 ## Integration with OpenAI Codex CLI
 
-### Important: User-Level Configuration Required
+### Important Setup Notice
 
-Codex CLI security policy **explicitly ignores** `model_provider` and `model_providers` keys in project-local `.codex/config.toml` files. Custom provider settings **must** be declared in your user-level configuration at `~/.codex/config.toml`.
+Codex CLI requires custom providers (`model_provider`) to be set in your user-level configuration at `~/.codex/config.toml`. Setting `model_provider = "gemini-web"` globally routes all Codex requests through your local Gemini proxy.
 
-### Step-by-Step Codex Setup
+To switch back to native OpenAI, comment out `model_provider = "gemini-web"` in `~/.codex/config.toml`.
+
+### Step-by-Step Configuration
 
 1. Edit your user-level configuration file at `~/.codex/config.toml`:
 
 ```toml
-model = "gemini-3.7-flash"
+model = "gpt-5.5"
 model_provider = "gemini-web"
 approval = "never"
 sandbox = "workspace-write"
@@ -88,35 +76,30 @@ export GEMINI_WEB_API_KEY="sk-gemini"
 codex
 ```
 
-### Enabling Shell Command & File Tool Execution
+---
+
+### In-Session Model Switching via `/model` Dropdown (Best DX)
+
+Because Codex CLI v0.151.0 hardcodes its `/model` TUI dropdown menu to GPT model names, the proxy maps each TUI menu item directly to a distinct Gemini operational mode:
+
+| TUI Dropdown Selection | Mapped Gemini Backend | Description |
+| --- | --- | --- |
+| **`gpt-5.5`** | **Gemini 3.7 Flash** | Standard all-around fast mode |
+| **`gpt-5.6-sol`** | **Gemini 3.5 Flash Thinking** | Deep Reasoning / Thinking mode |
+| **`gpt-5.2`** | **Gemini 3.1 Pro** | Pro mode (requires session cookies) |
+| **`gpt-5.6-terra`** | **Gemini Flash Thinking Lite** | Adaptive depth thinking mode |
+| **`gpt-5.6-luna`** | **Gemini Flash Lite** | Lightweight ultra-fast mode |
+
+**How to switch modes in the middle of a session:**
+Press `/model` inside Codex CLI and pick `gpt-5.6-sol` for Deep Reasoning, `gpt-5.2` for Pro mode, or `gpt-5.5` for Flash. The proxy intercepts the selection instantly without needing to restart your session!
+
+---
+
+### Tool Execution Permissions
 
 To ensure Codex permits Gemini to execute shell commands and read/modify files:
-- Set `approval = "never"` (or `"auto"` / `"ask"` depending on your security preference).
-- Set `sandbox = "workspace-write"` (or `"danger-full-access"`).
-
-### Switching Models in Codex CLI
-
-#### Method 1: Using the `-m` CLI Flag (Recommended)
-
-You can launch Codex with any model directly from the command line:
-
-```bash
-# Gemini 3.7 Flash
-codex -m gemini-3.7-flash
-
-# Gemini 3.5 Flash Thinking (Deep Thinking Mode)
-codex -m gemini-3.5-flash-thinking
-
-# Gemini 3.1 Pro (Requires session cookies)
-codex -m gemini-3.1-pro
-
-# GPT Compatibility Alias
-codex -m gpt-5.5
-```
-
-#### Method 2: TUI Dropdown Note
-
-In Codex v0.151.0, pressing `/model` in the TUI opens a hardcoded list of OpenAI model names (`gpt-5.6-sol`, `gpt-5.5`). Selecting a model from that dropdown overwrites your selected model in Codex's local state. To return to Gemini 3.7 Flash, launch Codex using `codex -m gemini-3.7-flash` or set `model = "gemini-3.7-flash"` in `~/.codex/config.toml`.
+- Set `approval = "never"` (or `"auto"` / `"ask"`).
+- Set `sandbox = "workspace-write"`.
 
 ---
 
