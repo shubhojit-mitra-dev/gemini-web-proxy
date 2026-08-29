@@ -28,6 +28,7 @@ type ModelSpec struct {
 	SupportVerbosity         bool             `json:"support_verbosity"`
 	TruncationPolicy         TruncationConfig `json:"truncation_policy"`
 	ModeString               string           `json:"mode"`
+	IsAlias                  bool             `json:"-"`
 }
 
 // TruncationConfig describes model truncation settings for Codex schema validation.
@@ -100,36 +101,47 @@ var Registry = map[string]ModelSpec{
 		Object: "model", Created: 1700000000, OwnedBy: "google", Description: "Frontier agentic coding model (Mapped to Gemini)",
 		Mode: 1, Think: 4, SupportedReasoningLevels: []string{}, ShellType: "default",
 		Visibility: "list", SupportedInAPI: true, Priority: 0, SupportVerbosity: false,
-		TruncationPolicy: TruncationConfig{Type: "auto"}, ModeString: "chat",
+		TruncationPolicy: TruncationConfig{Type: "auto"}, ModeString: "chat", IsAlias: true,
 	},
 	"gpt-5.6-terra": {
 		ID: "gpt-5.6-terra", Slug: "gpt-5.6-terra", DisplayName: "GPT-5.6 Terra (Gemini 3.7 Flash Backend)",
 		Object: "model", Created: 1700000000, OwnedBy: "google", Description: "Balanced agentic model (Mapped to Gemini)",
 		Mode: 1, Think: 4, SupportedReasoningLevels: []string{}, ShellType: "default",
 		Visibility: "list", SupportedInAPI: true, Priority: 0, SupportVerbosity: false,
-		TruncationPolicy: TruncationConfig{Type: "auto"}, ModeString: "chat",
+		TruncationPolicy: TruncationConfig{Type: "auto"}, ModeString: "chat", IsAlias: true,
 	},
 	"gpt-5.6-luna": {
 		ID: "gpt-5.6-luna", Slug: "gpt-5.6-luna", DisplayName: "GPT-5.6 Luna (Gemini 3.7 Flash Backend)",
 		Object: "model", Created: 1700000000, OwnedBy: "google", Description: "Fast agentic model (Mapped to Gemini)",
 		Mode: 1, Think: 4, SupportedReasoningLevels: []string{}, ShellType: "default",
 		Visibility: "list", SupportedInAPI: true, Priority: 0, SupportVerbosity: false,
-		TruncationPolicy: TruncationConfig{Type: "auto"}, ModeString: "chat",
+		TruncationPolicy: TruncationConfig{Type: "auto"}, ModeString: "chat", IsAlias: true,
 	},
 	"gpt-5.5": {
 		ID: "gpt-5.5", Slug: "gpt-5.5", DisplayName: "GPT-5.5 (Gemini 3.7 Flash Backend)",
 		Object: "model", Created: 1700000000, OwnedBy: "google", Description: "Frontier coding model (Mapped to Gemini)",
 		Mode: 1, Think: 4, SupportedReasoningLevels: []string{}, ShellType: "default",
 		Visibility: "list", SupportedInAPI: true, Priority: 0, SupportVerbosity: false,
-		TruncationPolicy: TruncationConfig{Type: "auto"}, ModeString: "chat",
+		TruncationPolicy: TruncationConfig{Type: "auto"}, ModeString: "chat", IsAlias: true,
 	},
 	"gpt-5.2": {
 		ID: "gpt-5.2", Slug: "gpt-5.2", DisplayName: "GPT-5.2 (Gemini 3.7 Flash Backend)",
 		Object: "model", Created: 1700000000, OwnedBy: "google", Description: "Professional model (Mapped to Gemini)",
 		Mode: 1, Think: 4, SupportedReasoningLevels: []string{}, ShellType: "default",
 		Visibility: "list", SupportedInAPI: true, Priority: 0, SupportVerbosity: false,
-		TruncationPolicy: TruncationConfig{Type: "auto"}, ModeString: "chat",
+		TruncationPolicy: TruncationConfig{Type: "auto"}, ModeString: "chat", IsAlias: true,
 	},
+}
+
+// NativeModels returns only primary non-alias Gemini model IDs.
+func NativeModels() []string {
+	var native []string
+	for k, spec := range Registry {
+		if !spec.IsAlias {
+			native = append(native, k)
+		}
+	}
+	return native
 }
 
 // ResolvedModel holds the final resolved model attributes for upstream request generation.

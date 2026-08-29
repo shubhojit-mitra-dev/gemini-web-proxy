@@ -31,7 +31,7 @@ type Config struct {
 // Default returns a new Config populated with default production parameters.
 func Default() *Config {
 	return &Config{
-		Port:              8081,
+		Port:              58120,
 		Host:              "0.0.0.0",
 		RetryAttempts:     3,
 		RetryDelaySec:     2,

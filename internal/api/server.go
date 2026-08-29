@@ -103,15 +103,10 @@ func (s *Server) isAuthorized(r *http.Request) bool {
 }
 
 func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
-	var modelNames []string
-	for k := range models.Registry {
-		modelNames = append(modelNames, k)
-	}
-
 	writeJSON(w, http.StatusOK, map[string]interface{}{
-		"status":  "ok",
-		"version": "1.0.0",
-		"models":  modelNames,
+		"status":        "ok",
+		"version":       "1.0.0",
+		"native_models": models.NativeModels(),
 	})
 }
 
