@@ -55,30 +55,19 @@ For compatibility with strict AI coding tools (such as OpenAI Codex CLI v0.151.0
 
 ## Integration with OpenAI Codex CLI
 
-### Tool Access & Sandbox Permissions
+### Important: User-Level Configuration Required
 
-For Codex CLI to execute shell commands and modify files using Gemini, ensure your Codex sandbox and approval settings permit tool execution.
+Codex CLI security policy **explicitly ignores** `model_provider` and `model_providers` keys in project-local `.codex/config.toml` files. Custom provider settings **must** be declared in your user-level configuration at `~/.codex/config.toml`.
 
-Add the following to your Codex configuration file:
+### Step-by-Step Codex Setup
 
-```toml
-approval = "never"  # Options: "never", "auto", or "ask"
-sandbox = "workspace-write"
-```
-
-If tool access is disabled by Codex's sandbox, Codex will notify the model that shell tools are unavailable.
-
----
-
-### Project-Level Setup (Recommended DX)
-
-Rather than overriding your global Codex configuration for all projects, you can enable Gemini on a per-project basis.
-
-Place a `.codex/config.toml` file inside your project directory:
+1. Edit your user-level configuration file at `~/.codex/config.toml`:
 
 ```toml
 model = "gemini-3.7-flash"
 model_provider = "gemini-web"
+approval = "never"
+sandbox = "workspace-write"
 
 [model_providers.gemini-web]
 name = "Gemini Web Proxy"
@@ -87,33 +76,23 @@ env_key = "GEMINI_WEB_API_KEY"
 wire_api = "responses"
 ```
 
-Export the placeholder environment variable and launch Codex inside that folder:
+2. Export the environment variable in your terminal session:
 
 ```bash
 export GEMINI_WEB_API_KEY="sk-gemini"
+```
+
+3. Launch Codex:
+
+```bash
 codex
 ```
 
-This ensures outside your project folder, Codex continues using your default OpenAI setup, while inside your project folder, Codex routes through your free local Gemini proxy.
+### Enabling Shell Command & File Tool Execution
 
----
-
-### Global Setup (Optional)
-
-If you prefer to route all Codex CLI sessions globally through Gemini, add the provider block to `~/.codex/config.toml`:
-
-```toml
-model = "gemini-3.7-flash"
-model_provider = "gemini-web"
-
-[model_providers.gemini-web]
-name = "Gemini Web Proxy"
-base_url = "http://localhost:58120/v1"
-env_key = "GEMINI_WEB_API_KEY"
-wire_api = "responses"
-```
-
----
+To ensure Codex permits Gemini to execute shell commands and read/modify files:
+- Set `approval = "never"` (or `"auto"` / `"ask"` depending on your security preference).
+- Set `sandbox = "workspace-write"` (or `"danger-full-access"`).
 
 ### Switching Models in Codex CLI
 
@@ -135,9 +114,9 @@ codex -m gemini-3.1-pro
 codex -m gpt-5.5
 ```
 
-#### Method 2: TUI Behavior Note
+#### Method 2: TUI Dropdown Note
 
-In Codex v0.151.0, pressing `/model` in the TUI opens a hardcoded list of OpenAI models (`gpt-5.6-sol`, `gpt-5.5`). If you select a model from that dropdown, Codex overwrites your selected model in its local state. To return to Gemini 3.7 Flash, relaunch Codex using `codex -m gemini-3.7-flash` or set `model = "gemini-3.7-flash"` in your `.codex/config.toml`.
+In Codex v0.151.0, pressing `/model` in the TUI opens a hardcoded list of OpenAI model names (`gpt-5.6-sol`, `gpt-5.5`). Selecting a model from that dropdown overwrites your selected model in Codex's local state. To return to Gemini 3.7 Flash, launch Codex using `codex -m gemini-3.7-flash` or set `model = "gemini-3.7-flash"` in `~/.codex/config.toml`.
 
 ---
 
