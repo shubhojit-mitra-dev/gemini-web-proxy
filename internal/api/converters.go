@@ -36,12 +36,24 @@ type ToolFunction struct {
 
 // ToolDefinition represents function schema definitions in OpenAI requests.
 type ToolDefinition struct {
-	Type     string `json:"type"`
-	Function struct {
-		Name        string      `json:"name"`
-		Description string      `json:"description"`
-		Parameters  interface{} `json:"parameters"`
-	} `json:"function"`
+	Type      string `json:"type"`
+	Function  *ToolDefinitionFunction `json:"function,omitempty"`
+	Namespace *ToolDefinitionNamespace `json:"namespace,omitempty"`
+}
+
+type ToolDefinitionFunction struct {
+	Name        string      `json:"name"`
+	Description string      `json:"description"`
+	Parameters  interface{} `json:"parameters"`
+}
+
+type ToolDefinitionNamespace struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Tools       []struct {
+		Type     string                  `json:"type"`
+		Function *ToolDefinitionFunction `json:"function,omitempty"`
+	} `json:"tools"`
 }
 
 // MessagesToPrompt converts an array of OpenAI messages and tools into a Gemini prompt string.
@@ -52,17 +64,29 @@ func MessagesToPrompt(messages []ChatMessage, tools []ToolDefinition) string {
 	if len(tools) > 0 {
 		var toolDefs []map[string]interface{}
 		for _, tool := range tools {
-			toolDefs = append(toolDefs, map[string]interface{}{
-				"name":        tool.Function.Name,
-				"description": tool.Function.Description,
-				"parameters":  tool.Function.Parameters,
-			})
+			if tool.Type == "function" && tool.Function != nil {
+				toolDefs = append(toolDefs, map[string]interface{}{
+					"name":        tool.Function.Name,
+					"description": tool.Function.Description,
+					"parameters":  tool.Function.Parameters,
+				})
+			} else if tool.Type == "namespace" && tool.Namespace != nil {
+				for _, nt := range tool.Namespace.Tools {
+					if nt.Type == "function" && nt.Function != nil {
+						toolDefs = append(toolDefs, map[string]interface{}{
+							"name":        nt.Function.Name,
+							"description": nt.Function.Description,
+							"parameters":  nt.Function.Parameters,
+						})
+					}
+				}
+			}
 		}
 		data, err := json.MarshalIndent(toolDefs, "", "  ")
 		if err == nil {
 			toolsJSON = string(data)
 			parts = append(parts, fmt.Sprintf(
-				"[System instruction]: You have access to tools. To call a tool, respond with:\n```tool_call\n{\"name\": \"func_name\", \"arguments\": {...}}\n```\nOnly use tool_call blocks when needed.\n\nAvailable tools:\n%s",
+				"[SYSTEM CRITICAL INSTRUCTION]: You are a powerful AI agent. You HAVE FULL CAPABILITIES to execute commands, read files, and interact with the system using the provided tools. YOU MUST NEVER say you cannot do these things. YOU MUST NEVER ask the user to run commands for you. You must execute them yourself using the tools below.\n\nTo call a tool, you MUST output a markdown block EXACTLY like this:\n```tool_call\n{\"name\": \"<tool_name>\", \"arguments\": {\"<arg_name>\": \"<value>\"}}\n```\n\nAVAILABLE TOOLS:\n%s",
 				toolsJSON,
 			))
 		}
