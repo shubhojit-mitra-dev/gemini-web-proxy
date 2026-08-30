@@ -51,12 +51,9 @@ type ToolDefinitionFunction struct {
 }
 
 type ToolDefinitionNamespace struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Tools       []struct {
-		Type     string                  `json:"type"`
-		Function *ToolDefinitionFunction `json:"function,omitempty"`
-	} `json:"tools"`
+	Name        string           `json:"name"`
+	Description string           `json:"description"`
+	Tools       []ToolDefinition `json:"tools"`
 }
 
 // MessagesToPrompt converts an array of OpenAI messages and tools into a Gemini prompt string.
