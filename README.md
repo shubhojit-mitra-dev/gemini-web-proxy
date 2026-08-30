@@ -111,33 +111,23 @@ The proxy intercepts your choice dynamically without requiring session restarts!
 
 ---
 
-## Toggling Between Gemini & Native OpenAI Models
+## Using Gemini and OpenAI Models Together
 
-- **To use free Gemini models**: Keep `model_provider = "gemini-web"` active in `~/.codex/config.toml`.
-- **To use native OpenAI models**: Comment out `# model_provider = "gemini-web"` in `~/.codex/config.toml`.
+You do NOT have to choose between Gemini and OpenAI models, or comment things out in your configuration! You can have them live in complete harmony and switch between them mid-session.
 
----
+Because the proxy now uses **standard OpenAI model names** (like `gpt-4o`, `gpt-4-turbo`, `gpt-3.5-turbo`), coding agents automatically detect them as tool-compatible.
 
-## Tool Execution Permissions
+### In OpenCode
 
-To ensure Codex permits Gemini to execute shell commands and read/modify files:
-- Set `approval = "never"` (or `"auto"` / `"ask"` depending on security preferences).
-- Set `sandbox = "workspace-write"`.
-
----
-
-## Integration with OpenCode
-
-To connect OpenCode to `gemini-web-proxy`:
+To connect OpenCode to `gemini-web-proxy` alongside your real OpenAI account:
 
 1. Open or create `~/.config/opencode/opencode.json` (or your project-level `opencode.json`).
-2. Add the following provider configuration:
+2. Configure both providers. Note how we map standard OpenAI model IDs:
 
 ```json
 {
   "$schema": "https://opencode.ai/config.json",
   "autoupdate": false,
-  "model": "gemini-web/gemini-3.7-flash",
   "provider": {
     "gemini-web": {
       "npm": "@ai-sdk/openai-compatible",
@@ -147,22 +137,39 @@ To connect OpenCode to `gemini-web-proxy`:
         "apiKey": "sk-gemini"
       },
       "models": {
-        "gemini-3.7-flash": {
-          "name": "Gemini 3.7 Flash"
-        },
-        "gemini-3.6-flash": {
-          "name": "Gemini 3.6 Flash"
-        },
-        "gemini-3.1-pro": {
-          "name": "Gemini 3.1 Pro"
-        }
+        "gpt-4-turbo": { "name": "Gemini 3.1 Pro (Mapped)" },
+        "gpt-4": { "name": "Gemini 3.5 Flash Thinking (Mapped)" },
+        "gpt-4o": { "name": "Gemini 3.7 Flash (Mapped)" },
+        "gpt-4o-mini": { "name": "Gemini 3.6 Flash (Mapped)" }
       }
+    },
+    "openai": {
+      "apiKey": "sk-your-real-openai-key"
     }
   }
 }
 ```
 
-3. Launch OpenCode and select `gemini-web/gemini-3.7-flash` from the model picker (`/models`).
+3. Launch OpenCode. You can now press `/models` and freely pick either **`gemini-web / gpt-4o`** or **`openai / gpt-4o`** without restarting your session!
+
+### In Codex CLI
+
+In `~/.codex/config.toml`, configure the proxy as a custom provider and your real OpenAI API key:
+
+```toml
+[model_providers.gemini-web]
+name = "Gemini Web Proxy"
+base_url = "http://localhost:58120/v1"
+env_key = "GEMINI_WEB_API_KEY"
+wire_api = "responses"
+
+[model_providers.openai]
+env_key = "OPENAI_API_KEY"
+```
+
+To switch models dynamically, use the provider prefix in the `/model` dropdown or command:
+- Type `/model gemini-web/gpt-4-turbo` to use Gemini Pro.
+- Type `/model openai/gpt-4o` to use real OpenAI GPT-4o.
 
 ---
 
