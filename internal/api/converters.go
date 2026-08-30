@@ -103,7 +103,7 @@ func MessagesToPrompt(messages []ChatMessage, tools []ToolDefinition) string {
 		data, _ := json.MarshalIndent(toolDefs, "", "  ")
 		toolsJSON = string(data)
 		parts = append(parts, fmt.Sprintf(
-			"Hello! I'm testing my local API parser and I need your help generating the correct JSON output based on some text. Could you please read the query below and pick the most appropriate function from this list?\n\n%s\n\nPlease output ONLY the JSON block wrapped in ```action_request like this:\n```action_request\n{\"name\": \"<function_name>\", \"arguments\": {\"<arg_name>\": \"<value>\"}}\n```\nThank you!\n",
+			"Hello! I'm testing my local API parser and I need your help generating the correct JSON output based on some text. Could you please read the query below and pick the most appropriate function from this list?\n\n%s\n\nIf you need to use a function, please output ONLY the JSON block wrapped in ```action_request like this:\n```action_request\n{\"name\": \"<function_name>\", \"arguments\": {\"<arg_name>\": \"<value>\"}}\n```\nIf you already have the information you need from previous tool results, just output the final text response normally without any JSON blocks.\nThank you!\n",
 			toolsJSON,
 		))
 	}
@@ -143,6 +143,10 @@ func MessagesToPrompt(messages []ChatMessage, tools []ToolDefinition) string {
 				parts = append(parts, fmt.Sprintf("Here is the text to process:\n%s\n\nPlease generate the JSON block for this text.", contentStr))
 			}
 		}
+	}
+
+	if len(messages) > 0 && messages[len(messages)-1].Role == "tool" {
+		parts = append(parts, "Based on the tool results above, please provide the final text response to the user. Do NOT output an action_request unless you absolutely need to call another function to gather more information.")
 	}
 
 	return strings.Join(parts, "\n\n")
