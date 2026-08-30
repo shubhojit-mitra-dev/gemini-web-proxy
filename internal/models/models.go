@@ -96,6 +96,48 @@ var Registry = map[string]ModelSpec{
 	},
 
 	// OpenAI mock aliases mapped to exact Codex CLI TUI dropdown choices
+	"gpt-5.6-sol": {
+		ID: "gpt-5.6-sol", Slug: "gpt-5.6-sol", DisplayName: "GPT-5.6 Sol (Gemini 3.1 Pro)",
+		Object: "model", Created: 1700000000, OwnedBy: "google", Description: "Frontier agentic model (Mapped to Gemini 3.1 Pro)",
+		Mode: 3, Think: 4, SupportedReasoningLevels: []string{}, ShellType: "unified_exec",
+		Visibility: "list", SupportedInAPI: true, Priority: 0, SupportVerbosity: false,
+		TruncationPolicy: TruncationConfig{Type: "auto"}, ModeString: "chat", IsAlias: true,
+	},
+	"gpt-5.6-terra": {
+		ID: "gpt-5.6-terra", Slug: "gpt-5.6-terra", DisplayName: "GPT-5.6 Terra (Gemini 3.5 Flash Thinking)",
+		Object: "model", Created: 1700000000, OwnedBy: "google", Description: "Balanced agentic model (Mapped to Gemini 3.5 Flash Thinking)",
+		Mode: 2, Think: 0, SupportedReasoningLevels: []string{}, ShellType: "unified_exec",
+		Visibility: "list", SupportedInAPI: true, Priority: 0, SupportVerbosity: false,
+		TruncationPolicy: TruncationConfig{Type: "auto"}, ModeString: "chat", IsAlias: true,
+	},
+	"gpt-5.6-luna": {
+		ID: "gpt-5.6-luna", Slug: "gpt-5.6-luna", DisplayName: "GPT-5.6 Luna (Gemini Flash Thinking Lite)",
+		Object: "model", Created: 1700000000, OwnedBy: "google", Description: "Fast agentic model (Mapped to Gemini Flash Thinking Lite)",
+		Mode: 5, Think: 4, SupportedReasoningLevels: []string{}, ShellType: "unified_exec",
+		Visibility: "list", SupportedInAPI: true, Priority: 0, SupportVerbosity: false,
+		TruncationPolicy: TruncationConfig{Type: "auto"}, ModeString: "chat", IsAlias: true,
+	},
+	"gpt-5.5": {
+		ID: "gpt-5.5", Slug: "gpt-5.5", DisplayName: "GPT-5.5 (Gemini 3.7 Flash)",
+		Object: "model", Created: 1700000000, OwnedBy: "google", Description: "Complex coding model (Mapped to Gemini 3.7 Flash)",
+		Mode: 1, Think: 4, SupportedReasoningLevels: []string{}, ShellType: "unified_exec",
+		Visibility: "list", SupportedInAPI: true, Priority: 0, SupportVerbosity: false,
+		TruncationPolicy: TruncationConfig{Type: "auto"}, ModeString: "chat", IsAlias: true,
+	},
+	"gpt-5.4": {
+		ID: "gpt-5.4", Slug: "gpt-5.4", DisplayName: "GPT-5.4 (Gemini 3.6 Flash)",
+		Object: "model", Created: 1700000000, OwnedBy: "google", Description: "Everyday model (Mapped to Gemini 3.6 Flash)",
+		Mode: 1, Think: 4, SupportedReasoningLevels: []string{}, ShellType: "unified_exec",
+		Visibility: "list", SupportedInAPI: true, Priority: 0, SupportVerbosity: false,
+		TruncationPolicy: TruncationConfig{Type: "auto"}, ModeString: "chat", IsAlias: true,
+	},
+	"gpt-5.4-mini": {
+		ID: "gpt-5.4-mini", Slug: "gpt-5.4-mini", DisplayName: "GPT-5.4 Mini (Gemini Flash Lite)",
+		Object: "model", Created: 1700000000, OwnedBy: "google", Description: "Small fast model (Mapped to Gemini Flash Lite)",
+		Mode: 6, Think: 4, SupportedReasoningLevels: []string{}, ShellType: "unified_exec",
+		Visibility: "list", SupportedInAPI: true, Priority: 0, SupportVerbosity: false,
+		TruncationPolicy: TruncationConfig{Type: "auto"}, ModeString: "chat", IsAlias: true,
+	},
 	"gpt-4-turbo": {
 		ID: "gpt-4-turbo", Slug: "gpt-4-turbo", DisplayName: "GPT-4 Turbo (Gemini 3.1 Pro)",
 		Object: "model", Created: 1700000000, OwnedBy: "google", Description: "Frontier agentic model (Mapped to Gemini 3.1 Pro)",
