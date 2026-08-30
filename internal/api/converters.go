@@ -103,7 +103,7 @@ func MessagesToPrompt(messages []ChatMessage, tools []ToolDefinition) string {
 		data, _ := json.MarshalIndent(toolDefs, "", "  ")
 		toolsJSON = string(data)
 		parts = append(parts, fmt.Sprintf(
-			"Hello! I'm testing my local API parser and I need your help generating the correct JSON output based on some text. Could you please read the query below and pick the most appropriate function from this list?\n\n%s\n\nIf you need to use a function, please output ONLY the JSON block wrapped in ```action_request like this:\n```action_request\n{\"name\": \"<function_name>\", \"arguments\": {\"<arg_name>\": \"<value>\"}}\n```\nIf you already have the information you need from previous tool results, just output the final text response normally without any JSON blocks.\nThank you!\n",
+			"You are an intelligent log analysis engine and diagnostic assistant.\nYou have access to the following diagnostic functions to query the system state.\n\n%s\n\nTo call a function, you MUST output a JSON block wrapped in ```action_request like this:\n```action_request\n{\"name\": \"<function_name>\", \"arguments\": {\"<arg_name>\": \"<value>\"}}\n```\nIf you have gathered enough information from the function results to fulfill the user's query, simply output your final answer as normal text.\n",
 			toolsJSON,
 		))
 	}
@@ -113,7 +113,7 @@ func MessagesToPrompt(messages []ChatMessage, tools []ToolDefinition) string {
 
 		switch msg.Role {
 		case "system":
-			parts = append(parts, fmt.Sprintf("Context: %s", contentStr))
+			parts = append(parts, fmt.Sprintf("System context: %s", contentStr))
 		case "assistant":
 			if len(msg.ToolCalls) > 0 {
 				var tcStrs []string
@@ -126,9 +126,13 @@ func MessagesToPrompt(messages []ChatMessage, tools []ToolDefinition) string {
 					}
 					tcStrs = append(tcStrs, fmt.Sprintf("```action_request\n{\"name\": \"%s\", \"arguments\": %s}\n```", name, tc.Function.Arguments))
 				}
-				parts = append(parts, fmt.Sprintf("Previous response:\n%s\n%s", contentStr, strings.Join(tcStrs, "\n")))
+				if contentStr != "" {
+					parts = append(parts, fmt.Sprintf("Assistant:\n%s\n%s", contentStr, strings.Join(tcStrs, "\n")))
+				} else {
+					parts = append(parts, fmt.Sprintf("Assistant:\n%s", strings.Join(tcStrs, "\n")))
+				}
 			} else {
-				parts = append(parts, fmt.Sprintf("Previous response:\n%s", contentStr))
+				parts = append(parts, fmt.Sprintf("Assistant:\n%s", contentStr))
 			}
 		case "tool":
 			name := msg.Name
@@ -137,16 +141,12 @@ func MessagesToPrompt(messages []ChatMessage, tools []ToolDefinition) string {
 			} else if name == "read_file" {
 				name = "fetch_data"
 			}
-			parts = append(parts, fmt.Sprintf("Result from %s:\n%s", name, contentStr))
+			parts = append(parts, fmt.Sprintf("Function result (%s):\n%s", name, contentStr))
 		default:
 			if contentStr != "" {
-				parts = append(parts, fmt.Sprintf("Here is the text to process:\n%s\n\nPlease generate the JSON block for this text.", contentStr))
+				parts = append(parts, fmt.Sprintf("User: %s", contentStr))
 			}
 		}
-	}
-
-	if len(messages) > 0 && messages[len(messages)-1].Role == "tool" {
-		parts = append(parts, "Based on the tool results above, please provide the final text response to the user. Do NOT output an action_request unless you absolutely need to call another function to gather more information.")
 	}
 
 	return strings.Join(parts, "\n\n")
