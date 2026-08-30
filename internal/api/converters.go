@@ -36,9 +36,12 @@ type ToolFunction struct {
 
 // ToolDefinition represents function schema definitions in OpenAI requests.
 type ToolDefinition struct {
-	Type      string `json:"type"`
-	Function  *ToolDefinitionFunction `json:"function,omitempty"`
-	Namespace *ToolDefinitionNamespace `json:"namespace,omitempty"`
+	Type        string                   `json:"type"`
+	Name        string                   `json:"name,omitempty"`
+	Description string                   `json:"description,omitempty"`
+	Parameters  interface{}              `json:"parameters,omitempty"`
+	Function    *ToolDefinitionFunction  `json:"function,omitempty"`
+	Namespace   *ToolDefinitionNamespace `json:"namespace,omitempty"`
 }
 
 type ToolDefinitionFunction struct {
@@ -64,20 +67,38 @@ func MessagesToPrompt(messages []ChatMessage, tools []ToolDefinition) string {
 	if len(tools) > 0 {
 		var toolDefs []map[string]interface{}
 		for _, tool := range tools {
-			if tool.Type == "function" && tool.Function != nil {
-				toolDefs = append(toolDefs, map[string]interface{}{
-					"name":        tool.Function.Name,
-					"description": tool.Function.Description,
-					"parameters":  tool.Function.Parameters,
-				})
-			} else if tool.Type == "namespace" && tool.Namespace != nil {
-				for _, nt := range tool.Namespace.Tools {
-					if nt.Type == "function" && nt.Function != nil {
-						toolDefs = append(toolDefs, map[string]interface{}{
-							"name":        nt.Function.Name,
-							"description": nt.Function.Description,
-							"parameters":  nt.Function.Parameters,
-						})
+			if tool.Type == "function" {
+				if tool.Function != nil {
+					toolDefs = append(toolDefs, map[string]interface{}{
+						"name":        tool.Function.Name,
+						"description": tool.Function.Description,
+						"parameters":  tool.Function.Parameters,
+					})
+				} else if tool.Name != "" {
+					toolDefs = append(toolDefs, map[string]interface{}{
+						"name":        tool.Name,
+						"description": tool.Description,
+						"parameters":  tool.Parameters,
+					})
+				}
+			} else if tool.Type == "namespace" {
+				if tool.Namespace != nil {
+					for _, nt := range tool.Namespace.Tools {
+						if nt.Type == "function" {
+							if nt.Function != nil {
+								toolDefs = append(toolDefs, map[string]interface{}{
+									"name":        nt.Function.Name,
+									"description": nt.Function.Description,
+									"parameters":  nt.Function.Parameters,
+								})
+							} else if nt.Name != "" {
+								toolDefs = append(toolDefs, map[string]interface{}{
+									"name":        nt.Name,
+									"description": nt.Description,
+									"parameters":  nt.Parameters,
+								})
+							}
+						}
 					}
 				}
 			}
