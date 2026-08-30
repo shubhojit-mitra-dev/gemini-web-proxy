@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 )
 
-var toolCallPattern = regexp.MustCompile("(?s)```(?:tool_call|json)\\s*\\n(.*?)\\n```")
+var toolCallPattern = regexp.MustCompile("(?s)```(?:tool_call|action_request|json)\\s*\\n(.*?)\\n```")
 
 // ChatMessage represents standard OpenAI role-content structure.
 type ChatMessage struct {
